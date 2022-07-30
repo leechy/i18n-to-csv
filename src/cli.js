@@ -129,6 +129,8 @@ async function convertJSON2CSV(folder, files) {
 async function writeCSVtoFile(data, file) {
   const writeStream = fs.createWriteStream(file);
   data.forEach((row) => {
-    writeStream.write('"' + row.join('","') + '"\n');
+    writeStream.write(
+      '"' + row.map((value) => value.replace(/"/g, '""')).join('","') + '"\n'
+    );
   });
 }
