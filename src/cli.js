@@ -64,7 +64,8 @@ export async function cli(args) {
   } else if (fs.lstatSync(answers.src).isFile()) {
     // convert CSV to JSON
 
-    console.log("It's a file!");
+    const translations = loadCSV(answers.src);
+    writeTranslationsToFiles(translations, answers.target);
   } else {
     console.error(
       `\x1b[1m${answers.src}\x1b[0m\x1b[31m`,
@@ -126,11 +127,66 @@ async function convertJSON2CSV(folder, files) {
   return result;
 }
 
+/**
+ * Saves an array of arrays of strings as csv file with a given name
+ *
+ * @param {Array<Array<string>>} data  two-dimensional array of strings to be saved as CSV
+ * @param {string} file                name of the file that should be saved
+ */
 async function writeCSVtoFile(data, file) {
   const writeStream = fs.createWriteStream(file);
   data.forEach((row) => {
     writeStream.write(
-      '"' + row.map((value) => value.replace(/"/g, '""')).join('","') + '"\n'
+      '"' + row.map((value) => value.replace(/"/g, '""')).join('","') + '"\r\n'
     );
+  });
+}
+
+/**
+ * Loads the CSV-file and transform it to an object with all the languages
+ *
+ * @param {string} filename  Name (with path) of the CSV file
+ * @returns {Object<lang: string, { [key: string]: { description: string; defaultMessage: string; } }>}
+ */
+function loadCSV(filename) {
+  const dataBuffer = fs.readFileSync(filename);
+  const dataString = dataBuffer.toString();
+  const data = dataString.split("\r\n");
+  // header
+  const header = data[0].split(",");
+  const langs = header.splice(2);
+
+  const translations = langs.reduce((acc, lang) => {
+    acc[lang] = {};
+    return acc;
+  }, {});
+
+  for (let i = 1, len = data.length; i < len; i++) {
+    const row = data[i]
+      .split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
+      .map((str) => str.replace(/(^"|"$)/g, "").replace('""', '"'));
+
+    langs.forEach((lang, idx) => {
+      translations[lang][row[0]] = {
+        description: row[1],
+        defaultMessage: row[idx + 2],
+      };
+    });
+  }
+
+  return translations;
+}
+
+/**
+ * Creates JSON file with translations for each language
+ *
+ * @param {object} translations  Object with all the languages data
+ * @param {string} folder        path to the folder where translations should be created
+ */
+function writeTranslationsToFiles(translations, folder) {
+  Object.keys(translations).forEach((lang) => {
+    const json = JSON.stringify(translations[lang], undefined, 2);
+    fs.writeFileSync(path.join(folder, lang + ".json"), json);
+    console.log(lang + ".json created");
   });
 }
