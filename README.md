@@ -1,4 +1,4 @@
-# i18n-to-scv
+# i18n-to-csv
 
 Small CLI script that converts the source files for all languages in the React Intl translations format to one CSV containing all the languages, and also can convert everythng back to separate language JSON files.
 

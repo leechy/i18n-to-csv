@@ -22,11 +22,13 @@ where arguments are from the list:
 export function parseArgumentsIntoOptions(rawArgs) {
   const args = arg(
     {
+      "--help": Boolean,
       "--src": String,
       "--target": String,
       "--silent": Boolean,
 
       // aliases
+      "-h": "--help",
       "-s": "--src",
       "-t": "--target",
       "-sh": "--silent",
